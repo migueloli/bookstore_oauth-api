@@ -6,11 +6,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/migueloli/bookstore_oauth-api/src/domais/accesstoken"
+	"github.com/migueloli/bookstore_oauth-api/src/utils/errors"
 )
 
 // AccessTokenHandler is a struct for the handler.
 type AccessTokenHandler interface {
 	GetByID(*gin.Context)
+	Create(*gin.Context)
 }
 
 type accessTokenHandler struct {
@@ -32,4 +34,20 @@ func (handler *accessTokenHandler) GetByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, accessToken)
+}
+
+func (handler *accessTokenHandler) Create(c *gin.Context) {
+	at := accesstoken.AccessToken{}
+	if err := c.ShouldBindJSON(&at); err != nil {
+		restErr := errors.NewBadRequestError("Invalid JSON body.")
+		c.JSON(restErr.Status, restErr)
+		return
+	}
+
+	if err := handler.service.Create(at); err != nil {
+		c.JSON(err.Status, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, at)
 }
